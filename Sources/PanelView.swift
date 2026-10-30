@@ -1,9 +1,11 @@
+import ServiceManagement
 import SwiftUI
 
 /// Forces a state when rendering snapshots.
 struct PanelPreview {
     var dayOffset = 0
     var showSystem = false
+    var setup: Bool? = nil
 }
 
 struct PanelView: View {
@@ -11,6 +13,7 @@ struct PanelView: View {
     @EnvironmentObject private var recorder: Recorder
     @State private var dayOffset = 0
     @State private var showSystem = false
+    @AppStorage("setupDone") private var setupDone = false
     @Environment(\.isSnapshot) private var isSnapshot
     @Environment(\.openSettings) private var openSettings
 
@@ -22,6 +25,9 @@ struct PanelView: View {
         let sessions = recorder.sessions(on: day).sorted { $0.start > $1.start }
         VStack(alignment: .leading, spacing: Space.s) {
             header.entrance(0)
+            if preview?.setup ?? (!setupDone && SMAppService.mainApp.status != .enabled) {
+                SetupCard(done: { withAnimation(Motion.spring) { setupDone = true } }).entrance(1)
+            }
             TodayCard(day: day, offset: offset, onDay: { dayOffset = $0 }).entrance(1)
             if isSnapshot {
                 lists(sessions)
@@ -138,6 +144,70 @@ struct PanelView: View {
             FooterButton(title: "Quit", icon: nil) { NSApp.terminate(nil) }
                 .keyboardShortcut("q")
         }
+    }
+}
+
+// MARK: - First run
+
+/// Shown until you've made the two choices that decide whether Peekside is useful:
+/// it only records while running, and red flags only reach you with notifications.
+struct SetupCard: View {
+    let done: () -> Void
+    @EnvironmentObject private var recorder: Recorder
+    @State private var login = SMAppService.mainApp.status == .enabled
+    @Environment(\.isSnapshot) private var isSnapshot
+
+    var body: some View {
+        Card(glow: .mic) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Peekside only sees what happens while it's running").font(Typo.title)
+                Text("Start it with your Mac so the timeline has no gaps, and get a notification when something looks wrong.")
+                    .font(Typo.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            VStack(alignment: .leading, spacing: Space.xs) {
+                SetupToggle(title: "Launch at login", on: login && !isSnapshot) {
+                    do {
+                        if login { try SMAppService.mainApp.unregister() } else { try SMAppService.mainApp.register() }
+                    } catch {}
+                    login = SMAppService.mainApp.status == .enabled
+                }
+                SetupToggle(title: "Notify me about red flags", on: recorder.alerts && !isSnapshot) {
+                    recorder.alerts.toggle()
+                    if recorder.alerts { Recorder.requestNotifications() }
+                }
+            }
+            HStack {
+                Spacer()
+                FooterButton(title: "Done", icon: nil, action: done)
+            }
+        }
+    }
+}
+
+/// A checkbox row drawn by hand, so it renders in snapshots.
+struct SetupToggle: View {
+    let title: String
+    let on: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Space.xs) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(on ? Color.primary.opacity(0.85) : Color.clear)
+                        .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(on ? Color.clear : Color.secondary.opacity(0.5), lineWidth: 1.2))
+                    Image(systemName: "checkmark").font(.system(size: 8, weight: .heavy)).foregroundStyle(.background).opacity(on ? 1 : 0)
+                }
+                .frame(width: 15, height: 15)
+                Text(title).font(Typo.body)
+                Spacer()
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressStyle())
+        .animation(Motion.quick, value: on)
     }
 }
 

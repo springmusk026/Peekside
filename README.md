@@ -11,8 +11,7 @@ every app that can read your keystrokes. Anything odd gets a red flag, like an a
 was locked.
 
 <p align="center">
-  <img src="docs/screenshots/panel-dark.png" width="340" alt="Peekside: FaceTime is using the mic and camera; today's timeline; sessions with a red-flagged background helper that recorded while the Mac was locked">
-  <img src="docs/screenshots/idle-light.png" width="340" alt="Peekside in light mode with nothing in use">
+  <img src="docs/demo.gif" width="490" alt="A FaceTime call starts: Peekside's eye opens, the header says FaceTime is using the mic and camera, and the call appears live in today's timeline above a red-flagged helper that recorded while the Mac was locked">
 </p>
 
 ## Features
@@ -25,6 +24,11 @@ was locked.
 - **A day at a glance**: total mic and camera time and a 24-hour timeline per day, 30 days back.
 - **Private by design**: history stays in one JSON file on your Mac. No network, no account, no admin rights.
 - **Command line**: `peekside`, `peekside now`, `peekside --days 7`, `peekside --json`.
+
+<p align="center">
+  <img src="docs/screenshots/setup-dark.png" width="300" alt="First run: turn on Launch at login and red-flag notifications">
+  <img src="docs/screenshots/idle-light.png" width="300" alt="Peekside in light mode with nothing in use">
+</p>
 
 <p align="center">
   <img src="docs/screenshots/menubar.png" width="640" alt="Menu bar icon: a closed eye when nothing listens, open while the mic or camera is in use, with a mark for red flags">

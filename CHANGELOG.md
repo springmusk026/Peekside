@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1 (2026-10-30)
+
+- First run: a card offers Launch at login and red-flag notifications. Peekside only records while it's running, so without this, new users quietly got gaps in their timeline.
+- The README opens with an animation of a call being picked up.
+
 ## 1.0 (2026-10-30)
 
 First release.

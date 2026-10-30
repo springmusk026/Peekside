@@ -21,6 +21,7 @@ Render every state in light and dark with demo data before opening a PR that cha
 
 ```sh
 build/Peekside.app/Contents/MacOS/Peekside --snapshot /tmp/peekside-shots
+build/Peekside.app/Contents/MacOS/Peekside --demo-gif docs/demo.gif
 ```
 
 ## Principles
