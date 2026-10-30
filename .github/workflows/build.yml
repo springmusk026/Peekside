@@ -17,6 +17,9 @@ jobs:
       - name: Build app
         run: ./build.sh --no-install
 
+      - name: Check the recorder's logic on made-up readings
+        run: build/Peekside.app/Contents/MacOS/Peekside --self-test
+
       - name: Read the sensors and the (empty) history from the command line
         run: |
           peekside=build/Peekside.app/Contents/MacOS/Peekside

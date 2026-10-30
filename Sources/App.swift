@@ -18,6 +18,7 @@ struct PeeksideApp: App {
             DemoReel.write(to: URL(fileURLWithPath: args[i + 1]))
             exit(0)
         }
+        if args.contains("--self-test") { exit(SelfTest.run()) }
         if CLI.wants(args) { exit(CLI.run(args)) }
     }
 
@@ -50,12 +51,19 @@ struct MenuBarLabel: View {
         MenuGlyph(open: active, flagged: flagged).frame(width: 18, height: 16).padding(.vertical, 1)
     }
 
-    private var rendered: NSImage {
+    /// The three looks are drawn once each: the label is re-evaluated whenever the recorder changes.
+    @MainActor private static var cache: [String: NSImage] = [:]
+
+    @MainActor private var rendered: NSImage {
+        let key = "\(active)\(flagged)"
+        if let image = Self.cache[key] { return image }
         let renderer = ImageRenderer(content: content.foregroundStyle(.black))
         renderer.scale = 2
         let image = renderer.nsImage ?? NSImage()
         image.isTemplate = true
-        image.accessibilityDescription = active ? "Peekside, something is using the mic or camera" : "Peekside"
+        image.accessibilityDescription = flagged ? "Peekside, something looks wrong"
+            : active ? "Peekside, something is using the mic or camera" : "Peekside"
+        Self.cache[key] = image
         return image
     }
 }

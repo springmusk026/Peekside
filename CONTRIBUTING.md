@@ -17,6 +17,12 @@ You need the Xcode command line tools (Swift 6) and macOS 14 or later.
 - `Sources/Recorder.swift`: turns one-second readings into sessions, flags and history.
 - `Sources/PanelView.swift`: the panel, built from the tokens in `Sources/Design.swift` (shared with Portside and Sweepside).
 
+Check the recorder's logic (sessions, pauses, sleep, camera attribution, classification) on made-up readings:
+
+```sh
+build/Peekside.app/Contents/MacOS/Peekside --self-test
+```
+
 Render every state in light and dark with demo data before opening a PR that changes the UI:
 
 ```sh

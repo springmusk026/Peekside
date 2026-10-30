@@ -18,22 +18,60 @@ struct AppInfo: Codable, Hashable {
     /// Runs without a window or Dock icon.
     let background: Bool
 
-    static func of(pid: pid_t) -> AppInfo {
-        var buffer = [CChar](repeating: 0, count: Int(MAXPATHLEN) * 4)
-        let path = proc_pidpath(pid, &buffer, UInt32(buffer.count)) > 0 ? String(cString: buffer) : ""
+    /// Nil when the process has already exited.
+    static func of(pid: pid_t) -> AppInfo? {
+        Sensors.path(of: pid).map { of(pid: pid, path: $0) }
+    }
+
+    static func of(pid: pid_t, path raw: String) -> AppInfo {
+        let path = visiblePath(raw)
         let running = NSRunningApplication(processIdentifier: pid)
         // Helpers (e.g. "Google Chrome Helper") belong to the app whose bundle contains them
         let outer = path.range(of: ".app/").map { String(path[..<$0.lowerBound]) + ".app" }
         let bundle = outer.flatMap { Bundle(path: $0) }
         let name = bundle.flatMap { ($0.infoDictionary?["CFBundleDisplayName"] ?? $0.infoDictionary?["CFBundleName"]) as? String }
             ?? running?.localizedName ?? (path as NSString).lastPathComponent
-        let system = path.hasPrefix("/System/") || path.hasPrefix("/usr/") || path.hasPrefix("/Library/Apple/")
-        let regular = NSWorkspace.shared.runningApplications.contains {
-            $0.activationPolicy == .regular && ($0.bundleURL?.path == outer || $0.processIdentifier == pid)
+        let regular = isWebKit(path) || NSWorkspace.shared.runningApplications.contains {
+            $0.activationPolicy == .regular && ($0.bundleURL.map { visiblePath($0.path) } == outer || $0.processIdentifier == pid)
         }
-        return AppInfo(name: system ? friendlySystemName(path, fallback: name) : name,
-                       bundleID: bundle?.bundleIdentifier ?? running?.bundleIdentifier,
-                       path: outer ?? path, system: system, background: !regular)
+        return AppInfo(name: name, bundleID: bundle?.bundleIdentifier ?? running?.bundleIdentifier,
+                       path: outer ?? path, system: false, background: !regular).classified(executable: path)
+    }
+
+    /// Sets `system` and a readable name from where the executable lives. Also used on saved
+    /// history, so it can be corrected after Peekside gets better at telling the two apart.
+    func classified(executable: String? = nil) -> AppInfo {
+        let exe = executable ?? path
+        // Web pages in Safari (and apps' web views) capture through WebKit's own processes
+        if Self.isWebKit(exe) {
+            return AppInfo(name: "Safari or a web view", bundleID: bundleID, path: path, system: false, background: false)
+        }
+        // Calls you placed yourself are carried by macOS daemons, but they're yours, not macOS's
+        let file = (exe as NSString).lastPathComponent
+        if Self.calls.contains(file) {
+            return AppInfo(name: Self.friendlySystemName(exe, fallback: name), bundleID: bundleID, path: path,
+                           system: false, background: false)
+        }
+        // Apple's apps (FaceTime, Voice Memos, Safari) live under /System too, but they're apps
+        let app = path.hasSuffix(".app") && path.contains("/Applications/")
+        let system = !app && (exe.hasPrefix("/System/") || exe.hasPrefix("/usr/") || exe.hasPrefix("/Library/Apple/"))
+        return AppInfo(name: system ? Self.friendlySystemName(exe, fallback: name) : name, bundleID: bundleID,
+                       path: path, system: system, background: background)
+    }
+
+    private static let calls: Set<String> = ["avconferenced", "callservicesd"]
+
+    private static func isWebKit(_ path: String) -> Bool {
+        (path as NSString).lastPathComponent.hasPrefix("com.apple.WebKit.")
+    }
+
+    /// Safari and other apps updated outside macOS run from a cryptex; show where people see them.
+    static func visiblePath(_ path: String) -> String {
+        for (hidden, shown) in [("/System/Volumes/Preboot/Cryptexes/App/System/Applications/", "/Applications/"),
+                                ("/System/Volumes/Preboot/Cryptexes/OS/", "/")] where path.hasPrefix(hidden) {
+            return shown + path.dropFirst(hidden.count)
+        }
+        return path
     }
 
     /// What a macOS process is for, when its name doesn't say.
@@ -86,7 +124,7 @@ enum Sensors {
         guard CGGetEventTapList(count, &taps, &count) == .success else { return [] }
         let keys: UInt64 = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue)
         let pids = taps.filter { $0.enabled && $0.eventsOfInterest & keys != 0 }.map { pid_t($0.tappingProcess) }
-        return Array(Set(pids)).filter { $0 != getpid() }
+        return Array(Set(pids)).filter { $0 > 0 && $0 != getpid() }
     }
 
     static func screenLocked() -> Bool {
@@ -95,6 +133,14 @@ enum Sensors {
     }
 
     static var frontmost: pid_t? { NSWorkspace.shared.frontmostApplication?.processIdentifier }
+
+    /// The executable's path, or nil once the process has exited.
+    static func path(of pid: pid_t) -> String? {
+        var buffer = [CChar](repeating: 0, count: Int(MAXPATHLEN) * 4)
+        guard proc_pidpath(pid, &buffer, UInt32(buffer.count)) > 0 else { return nil }
+        let path = String(cString: buffer)
+        return path.isEmpty ? nil : path
+    }
 
     private static func read<T>(_ object: AudioObjectID, _ selector: AudioObjectPropertySelector, as: T.Type) -> T? {
         var address = AudioObjectPropertyAddress(mSelector: selector, mScope: kAudioObjectPropertyScopeGlobal,

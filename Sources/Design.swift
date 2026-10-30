@@ -254,6 +254,7 @@ struct Segmented<Value: Hashable>: View {
         let value: Value
         let title: String
         var icon: String? = nil
+        var count: Int? = nil
     }
 
     let items: [Item]
@@ -275,6 +276,9 @@ struct Segmented<Value: Hashable>: View {
                             Image(systemName: icon).font(.system(size: small ? 10 : 11, weight: .medium))
                         }
                         Text(item.title)
+                        if let count = item.count {
+                            Text("\(count)").font(Typo.mono).foregroundStyle(.tertiary)
+                        }
                     }
                     .font(.system(size: small ? 11 : 12, weight: .medium))
                     .foregroundStyle(selected ? Color.primary : Color.secondary)

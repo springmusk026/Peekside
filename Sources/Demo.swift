@@ -48,9 +48,9 @@ enum Demo {
     static var monitors: [KeyMonitor] {
         let since = Calendar.current.date(byAdding: .day, value: -3, to: now)!
         return [
-            KeyMonitor(app: app("Raycast-like launcher", "/Applications/Launcher.app"), firstSeen: since, lastSeen: now),
-            KeyMonitor(app: app("Siri", "/System/Library/CoreServices/Siri.app", system: true), firstSeen: since, lastSeen: now),
-            KeyMonitor(app: app("Accessibility", "/usr/libexec/universalaccessd", system: true), firstSeen: since, lastSeen: now),
+            KeyMonitor(app: app("Raycast-like launcher", "/Applications/Launcher.app"), firstSeen: since),
+            KeyMonitor(app: app("Siri", "/System/Library/CoreServices/Siri.app", system: true), firstSeen: since),
+            KeyMonitor(app: app("Accessibility", "/usr/libexec/universalaccessd", system: true), firstSeen: since),
         ]
     }
 }

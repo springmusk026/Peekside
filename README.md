@@ -16,17 +16,19 @@ was locked.
 
 ## Features
 
-- **Who used the mic, by name**: per-app microphone use straight from macOS's audio system (CoreAudio process objects), including helpers like a browser tab's process, credited to their app.
-- **Camera on and off**: exact times. macOS doesn't say which app turns the camera on, so Peekside names the likeliest one (the app that started the mic at the same moment, or the one you were using) and marks it as a guess.
+- **Who used the mic, by name**: per-app microphone use straight from macOS's audio system (CoreAudio process objects), including helpers like a browser tab's process, credited to their app. Apple's own apps (FaceTime, Voice Memos, Safari web pages) count as apps, not hidden macOS services.
+- **Camera on and off**: exact times. macOS doesn't say which app turns the camera on, so Peekside names the likeliest one (the app that started the mic within a few seconds of it, or the app you were using if it can use a camera at all) and marks it as a guess.
 - **Apps that can read your keystrokes**: every app receiving key presses through a keyboard event tap, which is how keyloggers work, with a link to remove access in Input Monitoring.
 - **Red flags**: used while the screen was **locked**, an app using a sensor for the **first time**, or a process with **no window** at all. Optional notifications for each.
 - **macOS kept separate**: Siri listening for "Hey Siri" keeps the microphone open without the orange dot. Peekside shows it, along with dictation and other system services, in its own section, so they don't drown out your apps.
-- **A day at a glance**: total mic and camera time and a 24-hour timeline per day, 30 days back.
+- **A day at a glance**: total mic and camera time and a 24-hour timeline per day, 30 days back. Hover a bar to see what it was; switch the list between every session and a per-app summary.
+- **Honest durations**: a short pause (muting, switching mics) continues a session instead of starting a new one, and time the Mac spent asleep is never counted.
 - **Private by design**: history stays in one JSON file on your Mac. No network, no account, no admin rights.
 - **Command line**: `peekside`, `peekside now`, `peekside --days 7`, `peekside --json`.
 
 <p align="center">
   <img src="docs/screenshots/setup-dark.png" width="300" alt="First run: turn on Launch at login and red-flag notifications">
+  <img src="docs/screenshots/apps-dark.png" width="300" alt="By app: each app's mic and camera time today">
   <img src="docs/screenshots/idle-light.png" width="300" alt="Peekside in light mode with nothing in use">
 </p>
 

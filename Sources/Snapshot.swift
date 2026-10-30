@@ -8,11 +8,12 @@ enum PanelSnapshot {
         let app = NSApplication.shared
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let states: [(String, () -> Recorder, PanelPreview)] = [
-            ("panel", { Demo.recorder() }, PanelPreview(setup: false)),
-            ("setup", { Demo.recorder(active: false) }, PanelPreview(setup: true)),
-            ("idle", { Demo.recorder(active: false) }, PanelPreview(setup: false)),
-            ("system", { Demo.recorder(active: false) }, PanelPreview(showSystem: true, setup: false)),
-            ("empty", { Demo.recorder(empty: true) }, PanelPreview(setup: false)),
+            ("panel", { Demo.recorder() }, PanelPreview(setup: false, mode: .sessions)),
+            ("apps", { Demo.recorder() }, PanelPreview(setup: false, mode: .apps)),
+            ("setup", { Demo.recorder(active: false) }, PanelPreview(setup: true, mode: .sessions)),
+            ("idle", { Demo.recorder(active: false) }, PanelPreview(setup: false, mode: .sessions)),
+            ("system", { Demo.recorder(active: false) }, PanelPreview(showSystem: true, setup: false, mode: .sessions)),
+            ("empty", { Demo.recorder(empty: true) }, PanelPreview(setup: false, mode: .sessions)),
         ]
         for (scheme, name) in [(ColorScheme.light, "light"), (.dark, "dark")] {
             let appearance = NSAppearance(named: scheme == .dark ? .darkAqua : .aqua)!

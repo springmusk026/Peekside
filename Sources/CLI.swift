@@ -20,8 +20,8 @@ enum CLI {
         if args.contains("--version") { print("peekside \(version)"); return 0 }
 
         if args.contains("now") {
-            let mic = Sensors.microphone().map(AppInfo.of(pid:))
-            let keys = Sensors.keyboardMonitors().map(AppInfo.of(pid:))
+            let mic = Sensors.microphone().compactMap(AppInfo.of(pid:))
+            let keys = Sensors.keyboardMonitors().compactMap(AppInfo.of(pid:))
             let showSystem = args.contains("--all")
             let micApps = Array(Set(mic.filter { showSystem || !$0.system }.map(\.name))).sorted()
             print("Microphone  " + (micApps.isEmpty ? style.dim("not in use") : style.yellow(micApps.joined(separator: ", "))))
@@ -34,7 +34,14 @@ enum CLI {
             return 0
         }
 
-        let days = args.firstIndex(of: "--days").flatMap { $0 + 1 < args.count ? Int(args[$0 + 1]) : nil } ?? 1
+        var days = 1
+        if let i = args.firstIndex(of: "--days") {
+            guard i + 1 < args.count, let n = Int(args[i + 1]), n >= 1 else {
+                FileHandle.standardError.write(Data("peekside: --days needs a number of days, 1 to 30\n".utf8))
+                return 2
+            }
+            days = min(n, 30)
+        }
         let from = Calendar.current.startOfDay(for: Date().addingTimeInterval(-Double(days - 1) * 86_400))
         let history = Recorder.history()
             .filter { $0.finish(Date()) >= from && (args.contains("--all") || !$0.system) }
