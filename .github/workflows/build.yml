@@ -1,0 +1,38 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Build app
+        run: ./build.sh --no-install
+
+      - name: Read the sensors and the (empty) history from the command line
+        run: |
+          peekside=build/Peekside.app/Contents/MacOS/Peekside
+          $peekside --help
+          $peekside now --all
+          $peekside --json | python3 -c "import json,sys; assert json.load(sys.stdin) == []"
+          $peekside --days 7
+
+      - name: Render every panel state
+        run: |
+          build/Peekside.app/Contents/MacOS/Peekside --snapshot "$RUNNER_TEMP/shots"
+          ls "$RUNNER_TEMP/shots"
+          test -s "$RUNNER_TEMP/shots/panel-dark.png"
+
+      - name: Upload app
+        uses: actions/upload-artifact@v4
+        with:
+          name: Peekside.app
+          path: build/Peekside.app
